@@ -5,7 +5,6 @@ import 'dart:math';
 Map<int, int> calculated = {};
 
 calculate3n1(int n) {
-//  print("calculate3n1 n=$n");
   if (!calculated.containsKey(n)) {
     calculated[n] = n == 1? 1: calculate3n1(n.isEven? n ~/ 2: 3*n + 1) + 1;
   }
