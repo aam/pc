@@ -1,0 +1,4 @@
+name: pc
+description: Programming Challenges solutions
+dependencies:
+  unittest: any
