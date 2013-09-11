@@ -13,7 +13,7 @@ calculate3n1(int n) {
 
 main() {
   
-  var file = new File("test.txt");
+  var file = new File("3n1-test.txt");
   
   var future = file.readAsLines(encoding: Encoding.getByName("ASCII"));
   future.then((lines) {
