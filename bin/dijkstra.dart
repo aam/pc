@@ -79,27 +79,54 @@ class MinHeap {
 class Node {
   int node;
   int minDistance;
+  List<Edge> incoming;
+  List<Edge> outgoing;
+  
+  Node(this.node);
+  
+  toString() => "$node";
 }
 
 class Edge {
-  int from;
-  int to;
+  Node from;
+  Node to;
   int weight;
   Edge(this.from, this.to, this.weight);
   
   toString() => "$from-($weight)->$to";
 }
 
+class Graph {
+  var nodes = new List<Node>();
+  var edges = new List<Edge>();
+  var intToNode = {};
+
+  getOrAddNode(n) {
+    if (intToNode.containsKey(n)) {
+      return intToNode[n];
+    } else {
+      var node = new Node(n);
+      nodes.add(node);
+      intToNode[n] = node;
+      return node;
+    }
+  }
+}
+
 void main() {
   var f = new File("dijkstraData.txt");
   var lines = f.readAsLinesSync();
   var edges = [];
+  var graph = new Graph();
   for (var line in lines) {
     var l = line.split("\t");
     var from = int.parse(l[0]);
     for (var to_weight in l.skip(1).where((s) => s.isNotEmpty)) {
       var s = to_weight.split(",").map((s) => int.parse(s)).toList();
-      edges.add(new Edge(from, s[0], s[1]));
+      edges.add(new Edge(
+          graph.getOrAddNode(from), 
+          graph.getOrAddNode(s[0]),
+          s[1]));
     }
   }
   print(edges);
