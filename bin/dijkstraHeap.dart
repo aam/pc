@@ -5,6 +5,10 @@ abstract class HeapElement {
   int get key;
 }
 
+log(x) {
+//  print(x);
+}
+
 class MinHeap<T extends HeapElement> {
   List<T> heap;
   int heapSize = 0;
@@ -15,18 +19,27 @@ class MinHeap<T extends HeapElement> {
     heapify();
   }
 
-  toString() => "${heap}";
-
-  heapify() {
+  toString() {
+    var s = [];
     for (var i = 0; i < heapSize; i++) {
-      bubbleUp(i);
+      s.add("$i:${heap[i]}");
+    }
+    return "[${s.join(",")}]";
+  }
+
+  heapify([verbose = false]) {
+    for (var i = 0; i < heapSize; i++) {
+      bubbleUp(i, verbose);
     }
   }
 
-  bubbleUp(index) {
+  bubbleUp(index, [verbose = false]) {
     while (index > 0) {
       var parent = index >> 1;
       if (heap[index].key < heap[parent].key) {
+        if (verbose) {
+          log("bubbleUp swapping $index ${heap[index]} and $parent ${heap[parent]}");
+        }
         swap(index, parent);
         index = parent;
       } else {
@@ -60,8 +73,8 @@ class MinHeap<T extends HeapElement> {
       if (2 * index + 1 < heapSize) {
         // index has two children
         var minson = min(heap[2 * index].key, heap[2 * index + 1].key);
-        var minsonIndex = heap[2 * index] == minson ? 2 * index : 2 * index + 1;
-        if (heap[index].key > minson.key) {
+        var minsonIndex = heap[2 * index].key == minson ? 2 * index : 2 * index + 1;
+        if (heap[index].key > minson) {
           swap(index, minsonIndex);
           index = minsonIndex;
         } else {
@@ -76,6 +89,43 @@ class MinHeap<T extends HeapElement> {
           break;
         }
       }
+    }
+  }
+  
+  add(T t) {
+    if (heapSize == heap.length) {
+      heap.add(t);
+    } else {
+      heap[heapSize] = t;
+    }
+    heapSize++;
+    bubbleUp(heapSize-1);
+  }
+  
+  remove(T t) {
+    var ndxToRemove = 0;
+    while (ndxToRemove < heapSize && heap[ndxToRemove] != t) {
+      ndxToRemove++;
+    }
+    if (ndxToRemove >= heapSize) {
+      throw "Unexpected $ndxToRemove $heapSize $t";
+    }
+    if (ndxToRemove == heapSize - 1) {
+      heapSize--;
+    } else {
+      heap[ndxToRemove] = heap[heapSize-1];
+      log("after swap of last ${heapSize-1} with $ndxToRemove: $this");
+      heapSize--;
+      if (ndxToRemove > 0) {
+        var ndxParent = ndxToRemove >> 1;
+        if (heap[ndxParent].key > heap[ndxToRemove].key) {
+          bubbleUp(ndxToRemove);
+          log("after bubbleup: $this");
+          return;
+        }
+      }
+      pushDown(ndxToRemove);
+      log("after pushdown: $this");
     }
   }
 }
@@ -124,7 +174,7 @@ class Graph {
             s[1]));
       }
     }
-    print(edges);
+    //log(edges);
   }
   
   toString() => "$nodes";
@@ -142,18 +192,28 @@ class Graph {
 }
 
 var X = new Set<Node>(); // nodes we found minimum path to
-var frontier = new Set<Node>();
+MinHeap<Node> frontier = null;
+Set<Node> frontierSet = null;
 
 addToX(Node n) {
   X.add(n);
-  frontier.remove(n);
+  var updatedSet = new Set<Node>();
   for(Edge outgoing in n.outgoing) {
     if (!X.contains(outgoing.to)) {
       if (n.minDistance + outgoing.weight < outgoing.to.minDistance) {
         outgoing.to.minDistance = n.minDistance + outgoing.weight;
+        if (frontierSet.contains(outgoing.to)) {
+          updatedSet.add(outgoing.to);
+        }
       }
-      frontier.add(outgoing.to);
+      if (frontierSet.add(outgoing.to)) {
+        frontier.add(outgoing.to);
+      }
     }
+  }
+  for (Node n in updatedSet) {
+    frontier.remove(n);
+    frontier.add(n);
   }
 }
 
@@ -162,24 +222,26 @@ void main() {
   
   var start = graph.getOrAddNode(1);
   start.minDistance = 0;
+  frontier = new MinHeap<Node>([]);
+  frontierSet = new Set<Node>();
   addToX(start);
 
   while (X.length < graph.nodes.length) {
-    print("X=$X");
-    print("frontier=$frontier");
-    print(graph);
-    Node minNode = null;
-    for (Node n in frontier) {
-      if (minNode == null || n.minDistance < minNode.minDistance) {
-        minNode = n;
-      }
-    }
-    print("got $minNode");
+    log("X=$X");
+    log("frontier=$frontier");
+    Node minNode = frontier.extractMin();
+    log("after extractMin $minNode frontier=$frontier");
+    frontierSet.remove(minNode);
+    log("got $minNode");
     addToX(minNode);
   }
-  print(graph);
+  log(graph);
+  
   
   var result = [7,37,59,82,99,115,133,165,188,197].map((x) =>
     graph.intToNode[x].minDistance).join(",");
   print(result);
+  if (result != "2599,2610,2947,2052,2367,2399,2029,2442,2505,3068") {
+    print("failed");
+  }
 }
